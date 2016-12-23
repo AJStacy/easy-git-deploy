@@ -13,18 +13,6 @@ const NAME = "submission-portal-v2";
 const ORIGIN = "git@10.16.0.190:stratacache/submission-portal-v2.git";
 const DEPLOY = "ssh://git@10.16.0.148/var/repo/subPortalTest.git";
 
-function getPostData(req) {
-  if (req.method == 'POST') {
-    POST = '';
-    req.on('data', function(chunk) {
-      POST += chunk.toString();
-    });
-    req.on('end', function() {
-      return POST;
-    });
-  }
-}
-
 function gitPushToDeploy() {
   shell.exec('cd repos/'+NAME+' && git push deploy master --force', function (status, output, err) {
     if (status === 0) {
@@ -76,9 +64,17 @@ function handleRequest(request, response) {
 
   response.end('It Works!! Path Hit: ' + request.url);
 
-  if (post_data == "success") {
-    fs.mkdir('./repos', function(err) {
-      gitClone();
+  // Gather the post data
+  if (req.method == 'POST') {
+    POST = '';
+    req.on('data', function(chunk) {
+      POST += chunk.toString();
+      console.log(POST);
+    });
+    req.on('end', function() {
+      fs.mkdir('./repos', function(err) {
+        gitClone();
+      });
     });
   }
 
