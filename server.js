@@ -13,7 +13,7 @@ const NAME = "submission-portal-v2";
 const ORIGIN = "git@10.16.0.190:stratacache/submission-portal-v2.git";
 const DEPLOY = "ssh://git@10.16.0.148/var/repo/subPortalTest.git";
 
-function getPostData() {
+function getPostData(req) {
   var POST = {};
   if (req.method == 'POST') {
     req.on('data', function(data) {
