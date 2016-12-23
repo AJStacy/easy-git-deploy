@@ -51,9 +51,6 @@ function gitClone() {
 //We need a function which handles requests and send response
 function handleRequest(request, response) {
 
-  var post_data = getPostData(request);
-  console.log(post_data);
-
   // Ignore favicon requests
   if (request.url === '/favicon.ico') {
     response.writeHead(200, {'Content-Type': 'image/x-icon'} );
