@@ -13,6 +13,21 @@ const NAME = "submission-portal-v2";
 const ORIGIN = "git@10.16.0.190:stratacache/submission-portal-v2.git";
 const DEPLOY = "ssh://git@10.16.0.148/var/repo/subPortalTest.git";
 
+function getPostData() {
+  var POST = {};
+  if (req.method == 'POST') {
+    req.on('data', function(data) {
+      data = data.toString();
+      data = data.split('&');
+      for (var i = 0; i < data.length; i++) {
+        var _data = data[i].split("=");
+        POST[_data[0]] = _data[1];
+      }
+      return POST;
+    });
+  }
+}
+
 function gitPushToDeploy() {
   shell.exec('cd repos/'+NAME+' && git push deploy master --force', function (status, output, err) {
     if (status === 0) {
@@ -51,7 +66,8 @@ function gitClone() {
 //We need a function which handles requests and send response
 function handleRequest(request, response) {
 
-  console.log(request);
+  var post_data = getPostData(request);
+  console.log(post_data);
 
   // Ignore favicon requests
   if (request.url === '/favicon.ico') {
@@ -63,7 +79,7 @@ function handleRequest(request, response) {
 
   response.end('It Works!! Path Hit: ' + request.url);
 
-  if (request.build_status == "success") {
+  if (post_data == "success") {
     fs.mkdir('./repos', function(err) {
       gitClone();
     });
