@@ -22,5 +22,8 @@
   "bugs": {
     "url": "https://github.com/AJStacy/easy-git-deploy/issues"
   },
-  "homepage": "https://github.com/AJStacy/easy-git-deploy#readme"
+  "homepage": "https://github.com/AJStacy/easy-git-deploy#readme",
+  "dependencies": {
+    "shelljs": "^0.7.5"
+  }
 }
