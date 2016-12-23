@@ -51,7 +51,7 @@ function gitClone() {
 //We need a function which handles requests and send response
 function handleRequest(request, response) {
 
-  // console.log(request);
+  console.log(request);
 
   // Ignore favicon requests
   if (request.url === '/favicon.ico') {
@@ -63,9 +63,11 @@ function handleRequest(request, response) {
 
   response.end('It Works!! Path Hit: ' + request.url);
 
-  fs.mkdir('./repos', function(err) {
-    gitClone();
-  });
+  if (request.build_status == "success") {
+    fs.mkdir('./repos', function(err) {
+      gitClone();
+    });
+  }
 
 }
 
