@@ -1,0 +1,26 @@
+{
+  "name": "easy-git-deploy",
+  "version": "0.0.1",
+  "description": "An easy to setup git deploy solution tailored to use with GitLab.",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AJStacy/easy-git-deploy.git"
+  },
+  "keywords": [
+    "git",
+    "auto",
+    "deploy",
+    "gitlab"
+  ],
+  "author": "Andrew Stacy",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/AJStacy/easy-git-deploy/issues"
+  },
+  "homepage": "https://github.com/AJStacy/easy-git-deploy#readme"
+}
