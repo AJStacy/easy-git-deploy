@@ -14,15 +14,12 @@ const ORIGIN = "git@10.16.0.190:stratacache/submission-portal-v2.git";
 const DEPLOY = "ssh://git@10.16.0.148/var/repo/subPortalTest.git";
 
 function getPostData(req) {
-  var POST = {};
   if (req.method == 'POST') {
-    req.on('data', function(data) {
-      data = data.toString();
-      data = data.split('&');
-      for (var i = 0; i < data.length; i++) {
-        var _data = data[i].split("=");
-        POST[_data[0]] = _data[1];
-      }
+    POST = '';
+    req.on('data', function(chunk) {
+      POST += chunk.toString();
+    });
+    req.on('end', function() {
       return POST;
     });
   }
