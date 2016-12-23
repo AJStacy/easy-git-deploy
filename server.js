@@ -69,9 +69,11 @@ function handleRequest(req, res) {
       console.log(POST);
     });
     req.on('end', function() {
-      fs.mkdir('./repos', function(err) {
-        gitClone();
-      });
+      if (POST.build_status === "success") {
+        fs.mkdir('./repos', function(err) {
+          gitClone();
+        });
+      }
     });
   }
 
