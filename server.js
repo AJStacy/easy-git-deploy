@@ -3,15 +3,33 @@ var util = require('util');
 var shell = require('shelljs');
 var fs = require('fs');
 
-// Create containers for executed command threads
-var git_clone;
-var git_push;
+// Get the Server Config
+var SERVER_CONFIG = require('./server.conf.json');
 
-//Lets define a port we want to listen to
-const PORT = 1988;
-const NAME = "submission-portal-v2";
-const ORIGIN = "git@10.16.0.190:stratacache/submission-portal-v2.git";
-const DEPLOY = "ssh://git@10.16.0.148/var/repo/subPortalTest.git";
+// Create containers for executed command threads
+var CONFIG;
+
+function matchConfigs(name) {
+  for (var index in SERVER_CONFIG.repos) {
+    if (SERVER_CONFIG.repos[index].name === name) {
+      return index;
+    }
+  }
+  return false;
+}
+
+function setWebHookData(post_data) {
+
+  var config_match_index;
+  if ( config_match_index = matchConfigs(post_data.repository.name) ) {
+    CONFIG = {
+      port: SERVER_CONFIG.port,
+      name: post_data.repository.name,
+      origin: post_data.repository.git_http_url,
+      deploy: SERVER_CONFIG.repos[config_match_index].deploy_url
+    };
+  }
+}
 
 function gitPushToDeploy() {
   shell.exec('cd repos/'+NAME+' && git push deploy master --force', function (status, output, err) {
@@ -70,6 +88,7 @@ function handleRequest(req, res) {
     });
     req.on('end', function() {
       if (POST.build_status === "success") {
+        setWebHookData()
         fs.mkdir('./repos', function(err) {
           gitClone();
         });
