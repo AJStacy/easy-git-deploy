@@ -23,7 +23,6 @@ function setWebHookData(post_data) {
   var config_match_index;
   if ( config_match_index = matchConfigs(post_data.repository.name) ) {
     CONFIG = {
-      port: SERVER_CONFIG.port,
       name: post_data.repository.name,
       origin: post_data.repository.git_http_url,
       deploy: SERVER_CONFIG.repos[config_match_index].deploy_url
@@ -102,8 +101,8 @@ function handleRequest(req, res) {
 var server = http.createServer(handleRequest);
 
 //Lets start our server
-server.listen(PORT, function() {
+server.listen(SERVER_CONFIG.port, function() {
     //Callback triggered when server is successfully listening. Hurray!
-    console.log("Server listening on: http://localhost:%s", PORT);
+    console.log("Server listening on: http://localhost:%s", SERVER_CONFIG.port);
 });
 
