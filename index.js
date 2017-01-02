@@ -8,7 +8,7 @@ var fs = require('fs');
 /** 
  *  `POST` stores the JSON parsed post data received from GitLab as a global variable for easy access.
  */
-POST;
+POST = [];
 
 /** 
  *  `SERVER_CONFIG` stores the configuration from **server.conf.json** as a global variable for easy access.
@@ -18,12 +18,12 @@ SERVER_CONFIG = require('./config.json');
 /**
  * Stores the origin as a global variable for easy access.
  */
-ORIGIN;
+ORIGIN = "";
 
 /**
  * Stores the repo name as a global variable for easy access.
  */
-NAME;
+NAME = "";
 
 /**
  * Stores the deploy URL as a global variable for easy access.
@@ -42,9 +42,11 @@ function main() {
       console.log("Server Config: ",SERVER_CONFIG.server.mode);
 
       // use the server mode as an function call
-      var fn = window["mode"+_.capitalize(SERVER_CONFIG.server.mode)];
+      var fn = "mode"+_.capitalize(SERVER_CONFIG.server.mode);
+      console.log(fn);
+      var fn = global[fn];
       if(typeof fn === 'function') {
-          fn(t.parentNode.id);
+          fn();
       } else {
         console.log("Server mode configuration is invalid.");
       }
@@ -55,7 +57,7 @@ function main() {
 
 }
 
-function modePull() {
+modePull = function() {
 
   // Try to clone the git repo
   gitClone(function (status) {
@@ -78,24 +80,24 @@ function modePull() {
         // Failed to clone the repo, likely because it exists or the remote connection was invalid.
         console.log("Repo already exists or the remote connection was invalid.");
 
-        gitPullMaster(() => {
-          
-          console.log("Pulled the master branch.");
-          gitPushToDeploy(() => {
-            console.log("Pushed");
-          });
+        gitPullMaster((status) => {
+          statusCheck(status, () => {
+            gitPushToDeploy(() => {
+              console.log( (status === 0 ? "Deployed successfully." : "Failed to push to the deploy server!") );
+            });
+          }, () => console.log("Failed to pull the branch. Aborting.") );
         });
       }
     );
   });
 }
 
-function modeLocal() {
+modeLocal = function() {
   // Set the production remote
   // Push the branch to the production remote
 }
 
-function statusCheck(status, success, fail) {
+statusCheck = function(status, success, fail) {
   if (status !== 0) {
     fail();
   } else {
@@ -106,7 +108,7 @@ function statusCheck(status, success, fail) {
 /** 
  *  `gitPushToDeploy()` runs a `git push` command from the target repo to the set `deploy` remote.
  */
-function gitPushToDeploy(callback) {
+gitPushToDeploy = function(callback) {
   shell.exec('cd repos/'+NAME+' && git push deploy master --force', function (status, output, err) {
     if (status === 0) {
       console.log("Deployed successfully!");
@@ -118,7 +120,7 @@ function gitPushToDeploy(callback) {
 /** 
  *  `gitPullMaster()` runs a `git pull` command from the target repo to the `./repos` directory.
  */
-function gitPullMaster(callback) {
+gitPullMaster = function(callback) {
   shell.exec('cd repos/'+NAME+' && git pull origin master', function (status, output, err) {
     callback();
   });
@@ -127,7 +129,7 @@ function gitPullMaster(callback) {
 /** 
  *  `gitSetRemote()` set the git remote URL for deploying the project.
  */
-function gitSetRemote(callback) {
+gitSetRemote = function(callback) {
   shell.exec('cd repos/'+NAME+' && git remote add deploy '+DEPLOY, function (status, output, err) {
     if (status !== 0) {
       console.log("Remote already exists.");
@@ -139,7 +141,7 @@ function gitSetRemote(callback) {
 /** 
  *  `gitClone()` clones the target repo received in the post data to the `./repos` directory.
  */
-function gitClone(callback) {
+gitClone = function(callback) {
   shell.exec('cd repos && git clone '+ORIGIN+' '+NAME, function(status, output, err) {
     console.log(output);
     callback();
@@ -149,7 +151,7 @@ function gitClone(callback) {
 /** 
  *  `handleRequest()` handles receiving http requests and POST data.
  */
-function handleRequest(req, res) {
+handleRequest = function(req, res) {
 
   // Ignore favicon requests
   if (req.url === '/favicon.ico') {
