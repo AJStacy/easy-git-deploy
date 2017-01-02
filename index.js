@@ -18,14 +18,15 @@ SERVER_CONFIG = require('./config.json');
  */
 function main() {
 
-  console.log("Made it to main.", POST);
+  console.log("Made it to main.", POST.build_status);
 
-  if (POST.build_status == "success") {
+  if (POST.build_status === "success") {
 
     console.log("BUILD STATUS SUCCESS");
 
     fs.mkdir('./repos', function(err) {
 
+      console.log("Server Config: ",SERVER_CONFIG.server.mode);
       if (SERVER_CONFIG.server.mode === "pull") {
         console.log("SERVER MODE PULL");
         // Clone the repo
@@ -134,11 +135,10 @@ function handleRequest(req, res) {
     // Gather the post data
     req.on('data', function(chunk) {
       POST += chunk.toString();
-      // console.log(POST);
     });
     // Trigger the main logic after POST data has been received.
     req.on('end', function() {
-      console.log("POST DATA", POST);
+      console.log(POST);
       main();
     });
   }
