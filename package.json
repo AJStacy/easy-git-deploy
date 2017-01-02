@@ -25,5 +25,9 @@
   "homepage": "https://github.com/AJStacy/easy-git-deploy#readme",
   "dependencies": {
     "shelljs": "^0.7.5"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-documentation": "^3.1.0"
   }
 }

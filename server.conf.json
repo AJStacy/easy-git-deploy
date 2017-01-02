@@ -1,6 +1,10 @@
 {
-  "port": 1988,
-  "repos": [
+  "server": {
+    "mode": "local",
+    "port": 1988,
+    "gitlab_root_path": "/var/opt/gitlab/git-data/repositories/"
+  },
+   "repos": [
     {
       "name": "submission-portal-v2",
       "deploy_url": "ssh://git@10.16.0.148/var/repo/subPortalTest.git"
