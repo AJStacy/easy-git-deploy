@@ -11,7 +11,7 @@ var POST;
 /** 
  *  `SERVER_CONFIG` stores the configuration from **server.conf.json**.
  */
-var SERVER_CONFIG = require('./server.conf.json');
+var SERVER_CONFIG = require('./config.json');
 
 /** 
  *  The main server logic. Reads the **POST** data and calls the appropriate deploy methods.
@@ -136,6 +136,6 @@ var server = http.createServer(handleRequest);
  */
 server.listen(SERVER_CONFIG.port, function() {
     //Callback triggered when server is successfully listening. Hurray!
-    console.log("Server listening on: http://localhost:%s", SERVER_CONFIG.port);
+    console.log("Server listening on: http://localhost:%s", SERVER_CONFIG.server.port);
 });
 
