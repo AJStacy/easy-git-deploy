@@ -138,7 +138,7 @@ function handleRequest(req, res) {
     });
     // Trigger the main logic after POST data has been received.
     req.on('end', function() {
-      console.log(POST.build_status);
+      console.log("POST DATA", POST);
       main();
     });
   }
