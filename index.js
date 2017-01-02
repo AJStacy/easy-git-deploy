@@ -6,12 +6,12 @@ var fs = require('fs');
 /** 
  *  `POST` stores the post data received from GitLab.
  */
-var POST;
+POST = {};
 
 /** 
  *  `SERVER_CONFIG` stores the configuration from **server.conf.json**.
  */
-var SERVER_CONFIG = require('./config.json');
+SERVER_CONFIG = require('./config.json');
 
 /** 
  *  The main server logic. Reads the **POST** data and calls the appropriate deploy methods.
@@ -134,7 +134,7 @@ function handleRequest(req, res) {
     // Gather the post data
     req.on('data', function(chunk) {
       POST += chunk.toString();
-      console.log(POST);
+      // console.log(POST);
     });
     // Trigger the main logic after POST data has been received.
     req.on('end', function() {
