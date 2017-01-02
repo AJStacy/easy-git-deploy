@@ -20,20 +20,36 @@ function main() {
 
   if (POST.build_status === "success") {
 
+    console.log("BUILD STATUS SUCCESS");
+
     fs.mkdir('./repos', function(err) {
+
       if (SERVER_CONFIG.server.mode === "pull") {
+        console.log("SERVER MODE PULL");
         // Clone the repo
         // Set the production remote
         // Pull the latest branch
         // Push to the git remote
         gitClone(function (status) {
           statusCheck(status,
-            gitSetRemote(function() {
-              gitPushToDeploy();
-            }),
-            gitPullMaster(function() {
-              gitPushToDeploy();
-            })
+            function() {
+              console.log("Cloned the repo.");
+              gitSetRemote(function() {
+                console.log("REMOTE SET");
+                gitPushToDeploy(function() {
+                  console.log("Pushed");
+                });
+              });
+            },
+            function() {
+              console.log("Repo already exists.");
+              gitPullMaster(function() {
+                console.log("Pulled the master branch.");
+                gitPushToDeploy(function() {
+                  console.log("Pushed");
+                });
+              });
+            }
           );
         });
       } else if (SERVER_CONFIG.server.mode === "local") {
