@@ -134,7 +134,7 @@ var server = http.createServer(handleRequest);
 /** 
  *  Starting up our http server at the port specified in the `SERVER_CONFIG`.
  */
-server.listen(SERVER_CONFIG.port, function() {
+server.listen(SERVER_CONFIG.server.port, function() {
     //Callback triggered when server is successfully listening. Hurray!
     console.log("Server listening on: http://localhost:%s", SERVER_CONFIG.server.port);
 });
