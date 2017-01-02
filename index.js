@@ -18,7 +18,7 @@ SERVER_CONFIG = require('./config.json');
  */
 function main() {
 
-  console.log("Made it to main.", POST);
+  console.log("Made it to main.", POST.build_status);
 
   if (POST.build_status === "success") {
 
@@ -138,7 +138,7 @@ function handleRequest(req, res) {
     });
     // Trigger the main logic after POST data has been received.
     req.on('end', function() {
-      console.log(POST);
+      POST = JSON.parse(POST);
       main();
     });
   }
