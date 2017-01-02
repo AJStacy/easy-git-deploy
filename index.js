@@ -18,9 +18,9 @@ var SERVER_CONFIG = require('./config.json');
  */
 function main() {
 
-  console.log("Made it to main.");
+  console.log("Made it to main.", POST.build_status);
 
-  if (POST.build_status === "success") {
+  if (POST.build_status == "success") {
 
     console.log("BUILD STATUS SUCCESS");
 
