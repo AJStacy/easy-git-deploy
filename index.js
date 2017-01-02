@@ -1,68 +1,98 @@
 var http = require('http');
 var util = require('util');
 var shell = require('shelljs');
+var jsonBody = require("body/json");
+var _ = require("lodash");
 var fs = require('fs');
 
 /** 
- *  `POST` stores the post data received from GitLab.
+ *  `POST` stores the JSON parsed post data received from GitLab as a global variable for easy access.
  */
-POST = {};
+POST;
 
 /** 
- *  `SERVER_CONFIG` stores the configuration from **server.conf.json**.
+ *  `SERVER_CONFIG` stores the configuration from **server.conf.json** as a global variable for easy access.
  */
 SERVER_CONFIG = require('./config.json');
+
+/**
+ * Stores the origin as a global variable for easy access.
+ */
+ORIGIN;
+
+/**
+ * Stores the repo name as a global variable for easy access.
+ */
+NAME;
+
+/**
+ * Stores the deploy URL as a global variable for easy access.
+ */
+DEPLOY = SERVER_CONFIG.repositories[0].deploy_url;
 
 /** 
  *  The main server logic. Reads the **POST** data and calls the appropriate deploy methods.
  */
 function main() {
 
-  console.log("Made it to main.", POST.build_status);
-
   if (POST.build_status === "success") {
-
-    console.log("BUILD STATUS SUCCESS");
 
     fs.mkdir('./repos', function(err) {
 
       console.log("Server Config: ",SERVER_CONFIG.server.mode);
-      if (SERVER_CONFIG.server.mode === "pull") {
-        console.log("SERVER MODE PULL");
-        // Clone the repo
-        // Set the production remote
-        // Pull the latest branch
-        // Push to the git remote
-        gitClone(function (status) {
-          statusCheck(status,
-            function() {
-              console.log("Cloned the repo.");
-              gitSetRemote(function() {
-                console.log("REMOTE SET");
-                gitPushToDeploy(function() {
-                  console.log("Pushed");
-                });
-              });
-            },
-            function() {
-              console.log("Repo already exists.");
-              gitPullMaster(function() {
-                console.log("Pulled the master branch.");
-                gitPushToDeploy(function() {
-                  console.log("Pushed");
-                });
-              });
-            }
-          );
-        });
-      } else if (SERVER_CONFIG.server.mode === "local") {
-        // Set the production remote
-        // Push the branch to the production remote
+
+      // use the server mode as an function call
+      var fn = window["mode"+_.capitalize(SERVER_CONFIG.server.mode)];
+      if(typeof fn === 'function') {
+          fn(t.parentNode.id);
+      } else {
+        console.log("Server mode configuration is invalid.");
       }
+
     });
 
   }
 
+}
+
+function modePull() {
+
+  // Try to clone the git repo
+  gitClone(function (status) {
+
+    // Check its status for a success or failure and run callbacks
+    statusCheck(status,
+      () => {
+        // Successfully cloned.
+
+        // Make sure the remote for deploying is set.
+        gitSetRemote( () => {
+          
+          // Push to the deploy remote.
+          gitPushToDeploy( (status) => {
+            console.log( (status === 0 ? "Deployed successfully." : "Failed to push to the deploy server!") );
+          });
+        });
+      },
+      () => {
+        // Failed to clone the repo, likely because it exists or the remote connection was invalid.
+        console.log("Repo already exists or the remote connection was invalid.");
+
+        gitPullMaster(() => {
+          
+          console.log("Pulled the master branch.");
+          gitPushToDeploy(() => {
+            console.log("Pushed");
+          });
+        });
+      }
+    );
+  });
+}
+
+function modeLocal() {
+  // Set the production remote
+  // Push the branch to the production remote
 }
 
 function statusCheck(status, success, fail) {
@@ -134,11 +164,13 @@ function handleRequest(req, res) {
   if (req.method == 'POST') {
     // Gather the post data
     req.on('data', function(chunk) {
-      POST += chunk.toString();
+      POST.push(chunk);
     });
     // Trigger the main logic after POST data has been received.
     req.on('end', function() {
-      POST = JSON.parse(POST);
+      POST = JSON.parse(Buffer.concat(POST).toString());
+      ORIGIN = POST.repository.url;
+      NAME = POST.repository.name;
       main();
     });
   }

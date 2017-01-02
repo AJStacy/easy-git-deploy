@@ -24,6 +24,9 @@
   },
   "homepage": "https://github.com/AJStacy/easy-git-deploy#readme",
   "dependencies": {
+    "body": "^5.1.0",
+    "debug": "^2.6.0",
+    "lodash": "^4.17.4",
     "shelljs": "^0.7.5"
   },
   "devDependencies": {
