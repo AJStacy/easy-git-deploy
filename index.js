@@ -28,7 +28,7 @@ NAME = "";
 /**
  * Stores the deploy URL as a global variable for easy access.
  */
-DEPLOY = SERVER_CONFIG.repositories[0].deploy_url;
+DEPLOY = "";
 
 /** 
  *  The main server logic. Reads the **POST** data and calls the appropriate deploy methods.
@@ -39,11 +39,8 @@ function main() {
 
     fs.mkdir('./repos', function(err) {
 
-      console.log("Server Config: ",SERVER_CONFIG.server.mode);
-
       // use the server mode as an function call
       var fn = "mode"+_.capitalize(SERVER_CONFIG.server.mode);
-      console.log(fn);
       var fn = global[fn];
       if(typeof fn === 'function') {
           fn();
@@ -57,6 +54,9 @@ function main() {
 
 }
 
+/** 
+ *  Logic for the "pull" server mode. It will attempt to clone the repo, pull the latest branch, set the remote URL, and push the branch to it.
+ */
 modePull = function() {
 
   // Try to clone the git repo
@@ -68,7 +68,7 @@ modePull = function() {
         // Successfully cloned.
 
         // Make sure the remote for deploying is set.
-        gitSetRemote( () => {
+        gitSetRemote( (status) => {
           
           // Push to the deploy remote.
           gitPushToDeploy( (status) => {
@@ -82,9 +82,7 @@ modePull = function() {
 
         gitPullMaster((status) => {
           statusCheck(status, () => {
-            gitPushToDeploy(() => {
-              console.log( (status === 0 ? "Deployed successfully." : "Failed to push to the deploy server!") );
-            });
+            gitPushToDeploy();
           }, () => console.log("Failed to pull the branch. Aborting.") );
         });
       }
@@ -95,6 +93,9 @@ modePull = function() {
 modeLocal = function() {
   // Set the production remote
   // Push the branch to the production remote
+  gitSetRemote( (status) => {
+    gitPushToDeploy();
+  });
 }
 
 statusCheck = function(status, success, fail) {
@@ -110,10 +111,10 @@ statusCheck = function(status, success, fail) {
  */
 gitPushToDeploy = function(callback) {
   shell.exec('cd repos/'+NAME+' && git push deploy master --force', function (status, output, err) {
-    if (status === 0) {
-      console.log("Deployed successfully!");
+    console.log( (status === 0 ? "Deployed successfully." : "Failed to push to the deploy server!") );
+    if (typeof callback === 'function') {
+      callback();
     }
-    callback();
   });
 }
 
@@ -122,7 +123,9 @@ gitPushToDeploy = function(callback) {
  */
 gitPullMaster = function(callback) {
   shell.exec('cd repos/'+NAME+' && git pull origin master', function (status, output, err) {
-    callback();
+    if (typeof callback === 'function') {
+      callback();
+    }
   });
 }
 
@@ -134,7 +137,9 @@ gitSetRemote = function(callback) {
     if (status !== 0) {
       console.log("Remote already exists.");
     }
-    callback();
+    if (typeof callback === 'function') {
+      callback();
+    }
   });
 }
 
@@ -144,7 +149,9 @@ gitSetRemote = function(callback) {
 gitClone = function(callback) {
   shell.exec('cd repos && git clone '+ORIGIN+' '+NAME, function(status, output, err) {
     console.log(output);
-    callback();
+    if (typeof callback === 'function') {
+      callback();
+    }
   });
 }
 
@@ -170,14 +177,28 @@ handleRequest = function(req, res) {
     });
     // Trigger the main logic after POST data has been received.
     req.on('end', function() {
+      // SET THE GLOBALS
       POST = JSON.parse(Buffer.concat(POST).toString());
       ORIGIN = POST.repository.url;
       NAME = POST.repository.name;
+      DEPLOY = getDeployURL();
       main();
     });
   }
 
 }
+
+getDeployURL = function() {
+  return getRepoConfigValue("deploy_url");
+};
+
+getRepoConfigValue = function(target_key) {
+  for (var x = 0; x < SERVER_CONFIG.repositories.length; x++) {
+    if (SERVER_CONFIG.repositories[x].name === NAME) {
+      return SERVER_CONFIG.repositories[x][target_key];
+    }
+  }
+};
 
 /** 
  *  `server` stores the new http server instance.

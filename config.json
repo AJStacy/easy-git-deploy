@@ -1,6 +1,6 @@
 {
   "server": {
-    "mode": "pull",
+    "mode": "local",
     "port": 1988,
     "gitlab_root_path": "/var/opt/gitlab/git-data/repositories/"
   },
