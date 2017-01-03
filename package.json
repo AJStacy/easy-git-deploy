@@ -4,8 +4,8 @@
   "description": "An easy to setup git deploy solution tailored to use with GitLab.",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "npm run build:live",
+    "build:live": "nodemon --exec ./node_modules/.bin/ts-node -- ./index.ts"
   },
   "repository": {
     "type": "git",
@@ -30,7 +30,11 @@
     "shelljs": "^0.7.5"
   },
   "devDependencies": {
+    "@types/node": "^6.0.56",
     "gulp": "^3.9.1",
-    "gulp-documentation": "^3.1.0"
+    "gulp-documentation": "^3.1.0",
+    "nodemon": "^1.11.0",
+    "ts-node": "^2.0.0",
+    "typescript": "^2.1.4"
   }
 }
