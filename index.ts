@@ -7,6 +7,9 @@ import * as jsonBody from "body/json";
 import * as _ from "lodash";
 import * as fs from "fs";
 
+interface Callback { ():void; }
+interface StatusCallback { (status:number):void; }
+
 class GitLabAutoDeploy {
 
   /** 
@@ -54,7 +57,7 @@ class GitLabAutoDeploy {
   /** 
    *  `handleRequest()` handles receiving http requests and POST data.
    */
-  private handleRequest(req, res):void {
+  private handleRequest(req:http.ServerRequest, res:http.ServerResponse):void {
 
     // Ignore favicon requests
     if (req.url === '/favicon.ico') {
@@ -78,10 +81,13 @@ class GitLabAutoDeploy {
   }
 
   private postDataReceived():void {
+
     // Set the class properties
     this.POST = JSON.parse(Buffer.concat(this.POST).toString());
     this.ORIGIN = this.POST.repository.url;
     this.NAME = this.POST.repository.name;
+    this.DEPLOY = this.getDeployURL();
+
     // Start the server logic
     this.main();
   }
@@ -89,7 +95,7 @@ class GitLabAutoDeploy {
   /** 
    *  The main server logic. Reads the **POST** data and calls the appropriate deploy methods.
    */
-  private main() {
+  private main():void {
 
     if (this.POST.build_status === "success") {
 
@@ -112,10 +118,13 @@ class GitLabAutoDeploy {
 
   }
 
-  private modePull() {
+  /** 
+   *  Logic for the "pull" server mode. It will attempt to clone the repo, pull the latest branch, set the remote URL, and push the branch to it.
+   */
+  private modePull():void {
 
     // Try to clone the git repo
-    this.gitClone(function (status) {
+    this.gitClone( (status) => {
 
       // Check its status for a success or failure and run callbacks
       this.statusCheck(status,
@@ -126,20 +135,19 @@ class GitLabAutoDeploy {
           this.gitSetRemote( () => {
             
             // Push to the deploy remote.
-            this.gitPushToDeploy( (status) => {
-              console.log( (status === 0 ? "Deployed successfully." : "Failed to push to the deploy server!") );
-            });
+            this.gitPushToDeploy();
           });
         },
         () => {
           // Failed to clone the repo, likely because it exists or the remote connection was invalid.
           console.log("Repo already exists or the remote connection was invalid.");
 
-          this.gitPullMaster((status) => {
+          // Pull the current branch
+          this.gitPullMaster( (status) => {
+
+            // Check if it failed
             this.statusCheck(status, () => {
-              this.gitPushToDeploy(() => {
-                
-              });
+              this.gitPushToDeploy();
             }, () => console.log("Failed to pull the branch. Aborting.") );
           });
         }
@@ -147,12 +155,15 @@ class GitLabAutoDeploy {
     });
   }
 
-  private modeLocal() {
+  private modeLocal():void {
     // Set the production remote
     // Push the branch to the production remote
+    this.gitSetRemote( (status) => {
+      this.gitPushToDeploy();
+    });
   }
 
-  private statusCheck(status, success, fail) {
+  private statusCheck(status:number, success?:Callback, fail?:Callback) {
     if (status !== 0) {
       fail();
     } else {
@@ -163,11 +174,11 @@ class GitLabAutoDeploy {
   /** 
    *  `gitPushToDeploy()` runs a `git push` command from the target repo to the set `deploy` remote.
    */
-  private gitPushToDeploy(callback) {
+  private gitPushToDeploy(callback?:StatusCallback):void {
     shell.exec('cd repos/'+this.NAME+' && git push deploy master --force', function (status, output, err) {
       console.log( (status === 0 ? "Deployed successfully." : "Failed to push to the deploy server!") );
-      if (typeof callback === 'function') {
-        callback();
+      if (callback) {
+        callback(status);
       }
     });
   }
@@ -175,10 +186,10 @@ class GitLabAutoDeploy {
   /** 
    *  `gitPullMaster()` runs a `git pull` command from the target repo to the `./repos` directory.
    */
-  private gitPullMaster(callback) {
-    shell.exec('cd repos/'+NAME+' && git pull origin master', function (status, output, err) {
-      if (typeof callback === 'function') {
-        callback();
+  private gitPullMaster(callback?:StatusCallback):void {
+    shell.exec('cd repos/'+this.NAME+' && git pull origin master', function (status, output, err) {
+      if (callback) {
+        callback(status);
       }
     });
   }
@@ -186,13 +197,11 @@ class GitLabAutoDeploy {
   /** 
    *  `gitSetRemote()` set the git remote URL for deploying the project.
    */
-  private gitSetRemote(callback) {
-    shell.exec('cd repos/'+NAME+' && git remote add deploy '+DEPLOY, function (status, output, err) {
-      if (status !== 0) {
-        console.log("Remote already exists.");
-      }
-      if (typeof callback === 'function') {
-        callback();
+  private gitSetRemote(callback?:StatusCallback):void {
+    shell.exec('cd repos/'+this.NAME+' && git remote add deploy '+this.DEPLOY, function (status, output, err) {
+      console.log( (status !== 0 ? "Remote already exists." : "") );
+      if (callback) {
+        callback(status);
       }
     });
   }
@@ -200,13 +209,25 @@ class GitLabAutoDeploy {
   /** 
    *  `gitClone()` clones the target repo received in the post data to the `./repos` directory.
    */
-  private gitClone(callback) {
-    shell.exec('cd repos && git clone '+ORIGIN+' '+NAME, function(status, output, err) {
+  private gitClone(callback?:StatusCallback):void {
+    shell.exec('cd repos && git clone '+this.ORIGIN+' '+this.NAME, function(status, output, err) {
       console.log(output);
-      if (typeof callback === 'function') {
-        callback();
+      if (callback) {
+        callback(status);
       }
     });
+  }
+
+  private getDeployURL():string {
+    return this.getRepoConfigValue("deploy_url");
+  }
+
+  private getRepoConfigValue(target_key:string):string {
+    for (var x = 0; x < this.SERVER_CONFIG.repositories.length; x++) {
+      if (this.SERVER_CONFIG.repositories[x].name === this.NAME) {
+        return this.SERVER_CONFIG.repositories[x][target_key];
+      }
+    }
   }
 
 }
