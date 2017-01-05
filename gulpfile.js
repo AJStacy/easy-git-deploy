@@ -1,5 +1,6 @@
 var gulp = require('gulp');
 var gulpDocumentation = require('gulp-documentation');
+var gulpTS
 
 // Generating a pretty HTML documentation site
 gulp.task('documentation-html-example', function () {

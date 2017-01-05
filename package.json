@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "npm run build:live",
-    "build:live": "nodemon --exec ./node_modules/.bin/ts-node -- ./index.ts"
+    "build:live": "nodemon --exec ./node_modules/.bin/ts-node -- ./index.js"
   },
   "repository": {
     "type": "git",
@@ -25,9 +25,11 @@
   "homepage": "https://github.com/AJStacy/easy-git-deploy#readme",
   "dependencies": {
     "body": "^5.1.0",
+    "daemon": "^1.1.0",
     "debug": "^2.6.0",
     "lodash": "^4.17.4",
-    "shelljs": "^0.7.5"
+    "shelljs": "^0.7.5",
+    "yargs": "^6.6.0"
   },
   "devDependencies": {
     "@types/node": "^6.0.56",
