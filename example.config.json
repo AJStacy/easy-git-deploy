@@ -1,0 +1,43 @@
+{
+  "server": {
+    "port": 1988,
+    "timestamp_format": "MM:DD:YYYY - HH:mm",
+    "deploy_remote_name": "glad-deploy"
+  },
+  "repositories": [
+    {
+      "name": "my-project",
+      "targets": [
+        {
+          "ref": "master",
+          "deploy_url": "ssh://git@production.com/var/repo/my-project.git",
+          "hooks": {
+            "object_kind": "build",
+            "build_status": "success"
+          }
+        },
+        {
+          "ref": "test",
+          "deploy_url": "ssh://git@test.com/var/repo/my-project.git",
+          "hooks": {
+            "object_kind": "build",
+            "build_status": "success"
+          }
+        }
+      ]
+    },
+    {
+      "name": "my-project-2",
+      "targets": [
+        {
+          "ref": "master",
+          "deploy_url": "ssh://git@other-production.com/var/repo/my-project-2.git",
+          "hooks": {
+            "object_kind": "build",
+            "build_status": "success"
+          }
+        }
+      ]
+    }
+  ]
+}

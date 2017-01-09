@@ -41,3 +41,6 @@ repos/
 
 # Generated Documentation
 docs/
+
+# Configuration
+config.json
