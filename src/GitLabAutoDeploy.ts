@@ -212,6 +212,9 @@ export class Server {
    * `deploy()` will attempt to clone the repo, pull the latest branch, set the remote URL, and push the branch to it.
    */
   private deploy():void {
+
+    this.logger.info("Attempting to deploy branch '%s' for commit with message of '%s' by '%s'...", this.POST.ref, this.POST.commit.message, this.POST.commit.author_name, this.TIME_OBJECT);
+
     // Try to clone the git repo
     this.gitClone( (status) => {
 

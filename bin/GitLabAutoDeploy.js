@@ -110,6 +110,7 @@ var Server = (function () {
     };
     Server.prototype.deploy = function () {
         var _this = this;
+        this.logger.info("Attempting to deploy branch '%s' for commit with message of '%s' by '%s'...", this.POST.ref, this.POST.commit.message, this.POST.commit.author_name, this.TIME_OBJECT);
         this.gitClone(function (status) {
             _this.statusCheck(status, function () {
                 _this.gitSetRemote(function () {
