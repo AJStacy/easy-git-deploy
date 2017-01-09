@@ -1,6 +1,6 @@
 # GLAD
 
-![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)
+![MIT License](https://img.shields.io/badge/license-MIT-blue.svg) ![Version](https://img.shields.io/badge/version-0.1.0-green.svg)
 
 What is GLAD? It is a GitLab Auto Deploy server. Will it make me glad? Hopefully.
 
