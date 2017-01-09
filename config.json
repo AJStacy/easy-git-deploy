@@ -1,7 +1,6 @@
 {
   "server": {
     "port": 1988,
-    "gitlab_root_path": "/var/opt/gitlab/git-data/repositories/",
     "timestamp_format": "MM:DD:YYYY - HH:mm",
     "deploy_remote_name": "glad-deploy"
   },
