@@ -45,7 +45,7 @@ However, if you would like the server to run indefinitely as a background proces
 
 ## Configuration
 
-##### "server"
+#### "server"
 
 The basic server configuration.
 
@@ -55,7 +55,7 @@ Key | Default | Explanation
 "timestamp_format" | "MM:DD:YYYY - HH:mm" | The format for timestamps in the logs.
 "deploy_remote_name" | "glad-deploy" | The remote name set on the cloned repo before the branch is pushed. (You probably will never change this).
 
-##### "repositories"
+#### "repositories"
 
 An **Array** of **Objects** representing repositories which can be auto deployed.
 
@@ -64,7 +64,7 @@ Key | Explanation
 "name" | The name of the repository that can trigger an auto deploy.
 "targets" | An **Array** of **Objects** containing branch definitions that can trigger an auto deploy.
 
-##### "targets"
+#### "targets"
 
 Key | Explanation
 --- | -----------
@@ -120,16 +120,16 @@ Key | Explanation
 
 ## FAQ's
 
-##### What is a "bare" Git repository?
+#### What is a "bare" Git repository?
 
 It loosely is a remote server that receives and distributes Git data. When you create a "New Project" on GitLab, behind the scenes GitLab is actually generating a "bare" Git repo that you push your branches to.
 
-##### Why do I need to setup a bare repo on my server?
+#### Why do I need to setup a bare repo on my server?
 
 As a standard for doing automated deployments via Git, many users will create a bare repo that they can directly push their Git branches to. This bare repo will then have a **"post-receive"** hook set that will run a build script and ultimately place the project files where they need to be.
 
 Rather than move away from this common practice, GLAD simply aims to be an easy middleman between GitLab and your server that simply pushes branches when certain criteria are met.
 
-##### How do I create a bare repo?
+#### How do I create a bare repo?
 
 This is outside of the scope of this documentation, but a good and simple tutorial can be found [here](https://ma.ttias.be/simple-git-push-workflow-deploy-code-server/).
