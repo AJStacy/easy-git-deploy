@@ -148,7 +148,7 @@ export class Server {
     }
 
     // Test if the current post request meets the deploy conditions specified in the config and if true run the boot process
-    if (this.isTriggered()) this.boot();
+    if (this.isTriggered()) this.deploy();
     else this.logger.warn("The Post data parameters did not meet the deploy hook requirements defined by the configuration.", this.TIME_OBJECT);
 
   }
@@ -209,25 +209,9 @@ export class Server {
   }
 
   /** 
-   * `boot()` reads the server mode from the config and activates the proper logic for that mode.
+   * `deploy()` will attempt to clone the repo, pull the latest branch, set the remote URL, and push the branch to it.
    */
-  private boot():void {
-    this.logger.debug("Attempting to run the %s server mode.", this.SERVER_CONFIG.server.mode, this.TIME_OBJECT);
-    // use the server mode as an function call
-    var name = "mode"+_.capitalize(this.SERVER_CONFIG.server.mode);
-    var fn = this[name];
-    if (typeof fn === 'function') {
-        this[name]();
-    } else {
-      this.logger.error("Server mode configuration is invalid.", this.TIME_OBJECT);
-    }
-  }
-
-  /** 
-   * `modeStandalone()` will attempt to clone the repo, pull the latest branch, set the remote URL, and push the branch to it.
-   */
-  private modeStandalone():void {
-
+  private deploy():void {
     // Try to clone the git repo
     this.gitClone( (status) => {
 
@@ -249,17 +233,6 @@ export class Server {
           });
         }
       );
-    });
-  }
-
-  /** 
-   * `modeLocal()` will set a remote on the repo existing on GitLab and then push it to that newly created remote.
-   */
-  private modeLocal():void {
-    // Set the production remote
-    // Push the branch to the production remote
-    this.gitSetRemote( (status) => {
-      this.gitPushToDeploy();
     });
   }
 
