@@ -7,6 +7,7 @@ What is GLAD? It is a GitLab Auto Deploy server. Will it make me glad? Hopefully
 GLAD is a simple typescript Node server that executes a series of Git commands based on GitLab webhooks and GLAD's own internal configuration.
 
 To execute a deployment it goes through the following cycle:
+
 1. Receive the webhook from GitLab to trigger the deploy process.
 2. Compares the webhook data against the GLAD server config.
 3. If the webhook data matches the config it then clones the repo, sets a remote for the deploy destination, and pushes the matched branch.
