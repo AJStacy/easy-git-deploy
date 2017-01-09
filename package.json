@@ -3,10 +3,6 @@
   "version": "0.0.1",
   "description": "An easy to setup git deploy solution tailored to use with GitLab.",
   "main": "server.js",
-  "scripts": {
-    "start": "npm run build:live",
-    "build:live": "nodemon --exec ./node_modules/.bin/ts-node -- ./index.js"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/AJStacy/easy-git-deploy.git"
@@ -28,7 +24,10 @@
     "daemon": "^1.1.0",
     "debug": "^2.6.0",
     "lodash": "^4.17.4",
+    "moment": "^2.17.1",
     "shelljs": "^0.7.5",
+    "winston": "^2.3.0",
+    "winston-daily-rotate-file": "^1.4.2",
     "yargs": "^6.6.0"
   },
   "devDependencies": {
