@@ -33,9 +33,10 @@
   "devDependencies": {
     "@types/node": "^6.0.56",
     "gulp": "^3.9.1",
-    "gulp-documentation": "^3.1.0",
+    "gulp-typedoc": "^2.0.1",
     "nodemon": "^1.11.0",
     "ts-node": "^2.0.0",
+    "typedoc": "^0.5.3",
     "typescript": "^2.1.4"
   }
 }
