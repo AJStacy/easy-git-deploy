@@ -71,7 +71,7 @@ export class Server {
   /** 
    * `start()` handles receiving http requests and POST data.
    */
-  public start() {
+  public start():void {
 
     var self = this;
 
@@ -155,6 +155,7 @@ export class Server {
 
   /** 
    * `getDeployConfig()` matches a repository name from the server config with the current post data object repository name and returns the matched object.
+   * @return mixed  Object or false
    */
   private retrieveDeployConfig():any {
     // Loop through each repository in the configuration
@@ -171,6 +172,7 @@ export class Server {
 
   /** 
    * `getTargetConfig()` branch ref from the server config with the current post data object repository name and returns the matched object.
+   * @return mixed  Object or false
    */
   private retrieveTargetConfig():any {
     // Loop through that repos target branches and try to match to the target branch sent by the post data
@@ -187,25 +189,44 @@ export class Server {
 
   /** 
    * `isTriggered()` checks if the POST properties hook conditions meet those configured for triggering a deployment.
+   * @return boolean
    */
-  private isTriggered() {
-    var hooks = Object.keys(this.TARGET_CONFIG.hooks);
+  private isTriggered():boolean {
+    // Get the hook paths
+    var hook_paths = Object.keys(this.TARGET_CONFIG.hooks);
+    // Instantiate an array to store the truthiness of each hook
     var truth = [];
-    for (var index in hooks) {
-      var hook = hooks[index];
-      this.logger.debug("Attempting to match the hook with a key of %s.", hook, this.TIME_OBJECT);
-      if (this.POST[hook]) {
-        this.logger.debug("Matched the hook key in the Post data!", this.TIME_OBJECT);
-        if (this.POST[hook] === this.TARGET_CONFIG.hooks[hook]) {
-          this.logger.debug("Matched the hook value in the target branch config with the post value.", {target_config: this.TARGET_CONFIG.hooks[hook], post_value: this.POST[hook], timestamp: moment().format(this.TIME_FORMAT)});
-          truth.push(true);
-        }
+
+    for (var index in hook_paths) {
+      // The actual hook path
+      var hook_path = hook_paths[index];
+      // The hook's value
+      var hook_value = this.TARGET_CONFIG.hooks[hook_path];
+
+      this.logger.debug("Attempting to match the hook with a key of %s.", hook_path, this.TIME_OBJECT);
+      
+      // If the hook path matches a path in the POST data, and if the value of both the POST Data path and hook path match
+      if ( this.getDeepMatch(this.POST, hook_path, hook_value) ) {
+        this.logger.debug("Matched the hook value in the target branch config with the post value.", {target_config: hook_value, post_value: this.POST[hook_path], timestamp: moment().format(this.TIME_FORMAT)});
+        truth.push(true);
       }
+      
     }
     // Check if all of the configured hooks match the GitLab post data
-    var matched = ( hooks.length === truth.length );
+    var matched = ( hook_paths.length === truth.length );
     if (matched) this.logger.debug("All hooks in the repository target branch config matched!", this.TIME_OBJECT);
     return matched;
+  }
+
+    /** 
+   * `getDeepMatch()` validates a path in a passed in object and then tests whether the value at that path matches the passed in value
+   * @return boolean 
+   */
+  private getDeepMatch(object:any, path:string, value:any):boolean {
+    if (_.hasIn(object, path)) {
+      return (_.get(object, path) === value);
+    }
+    return false;
   }
 
   /** 
@@ -242,7 +263,7 @@ export class Server {
   /** 
    *  `statusCheck()` checks if the status from a shell exec is success or fail and triggers the appropriate callback.
    */
-  private statusCheck(status:number, success?:Callback, fail?:Callback) {
+  private statusCheck(status:number, success?:Callback, fail?:Callback):void {
     if (status === 0) success();
     else fail();
   }

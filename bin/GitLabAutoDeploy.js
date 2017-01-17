@@ -1,6 +1,7 @@
 "use strict";
 var http = require("http");
 var shell = require("shelljs");
+var _ = require("lodash");
 var moment = require("moment");
 var fs = require("fs");
 var Server = (function () {
@@ -90,23 +91,27 @@ var Server = (function () {
         return false;
     };
     Server.prototype.isTriggered = function () {
-        var hooks = Object.keys(this.TARGET_CONFIG.hooks);
+        var hook_paths = Object.keys(this.TARGET_CONFIG.hooks);
         var truth = [];
-        for (var index in hooks) {
-            var hook = hooks[index];
-            this.logger.debug("Attempting to match the hook with a key of %s.", hook, this.TIME_OBJECT);
-            if (this.POST[hook]) {
-                this.logger.debug("Matched the hook key in the Post data!", this.TIME_OBJECT);
-                if (this.POST[hook] === this.TARGET_CONFIG.hooks[hook]) {
-                    this.logger.debug("Matched the hook value in the target branch config with the post value.", { target_config: this.TARGET_CONFIG.hooks[hook], post_value: this.POST[hook], timestamp: moment().format(this.TIME_FORMAT) });
-                    truth.push(true);
-                }
+        for (var index in hook_paths) {
+            var hook_path = hook_paths[index];
+            var hook_value = this.TARGET_CONFIG.hooks[hook_path];
+            this.logger.debug("Attempting to match the hook with a key of %s.", hook_path, this.TIME_OBJECT);
+            if (this.getDeepMatch(this.POST, hook_path, hook_value)) {
+                this.logger.debug("Matched the hook value in the target branch config with the post value.", { target_config: hook_value, post_value: this.POST[hook_path], timestamp: moment().format(this.TIME_FORMAT) });
+                truth.push(true);
             }
         }
-        var matched = (hooks.length === truth.length);
+        var matched = (hook_paths.length === truth.length);
         if (matched)
             this.logger.debug("All hooks in the repository target branch config matched!", this.TIME_OBJECT);
         return matched;
+    };
+    Server.prototype.getDeepMatch = function (object, path, value) {
+        if (_.hasIn(object, path)) {
+            return (_.get(object, path) === value);
+        }
+        return false;
     };
     Server.prototype.deploy = function () {
         var _this = this;
