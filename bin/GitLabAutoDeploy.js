@@ -96,7 +96,7 @@ var Server = (function () {
         for (var index in hook_paths) {
             var hook_path = hook_paths[index];
             var hook_value = this.TARGET_CONFIG.hooks[hook_path];
-            this.logger.debug("Attempting to match the hook with a key of %s.", hook_path, this.TIME_OBJECT);
+            this.logger.debug("Attempting to match the hook with a key of %s and a value of %s.", hook_path, hook_value, this.TIME_OBJECT);
             if (this.getDeepMatch(this.POST, hook_path, hook_value)) {
                 this.logger.debug("Matched the hook value in the target branch config with the post value.", { target_config: hook_value, post_value: this.POST[hook_path], timestamp: moment().format(this.TIME_FORMAT) });
                 truth.push(true);

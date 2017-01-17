@@ -203,7 +203,7 @@ export class Server {
       // The hook's value
       var hook_value = this.TARGET_CONFIG.hooks[hook_path];
 
-      this.logger.debug("Attempting to match the hook with a key of %s.", hook_path, this.TIME_OBJECT);
+      this.logger.debug("Attempting to match the hook with a key of %s and a value of %s.", hook_path, hook_value, this.TIME_OBJECT);
       
       // If the hook path matches a path in the POST data, and if the value of both the POST Data path and hook path match
       if ( this.getDeepMatch(this.POST, hook_path, hook_value) ) {
