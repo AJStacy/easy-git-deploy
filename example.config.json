@@ -10,19 +10,21 @@
       "name": "my-project",
       "targets": [
         {
-          "ref": "master",
+          "branch": "master",
           "deploy_url": "ssh://git@production.com/var/repo/my-project.git",
           "hooks": {
+            "ref": "master",
             "object_kind": "build",
             "build_status": "success"
           }
         },
         {
-          "ref": "test",
+          "branch": "test",
           "deploy_url": "ssh://git@test.com/var/repo/my-project.git",
           "hooks": {
-            "object_kind": "build",
-            "build_status": "success"
+            "object_attributes.target_branch": "test",
+            "object_kind": "merge_request",
+            "object_attributes.merge_status": "merged"
           }
         }
       ]

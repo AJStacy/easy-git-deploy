@@ -138,14 +138,14 @@ export class Server {
     // Set the server class properties
     this.logger.debug("Setting the server class properties (POST, ORIGIN, and DEPLOY_CONFIG')", this.TIME_OBJECT);
     this.POST = JSON.parse(Buffer.concat(data).toString());
-    this.logger.debug("The Post data received : %j", this.POST, this.TIME_OBJECT);
+    this.logger.debug("The Post data received:", {postData: this.POST, timestamp: moment().format(this.TIME_FORMAT)});
     this.ORIGIN = this.POST.repository.url;
 
     this.DEPLOY_CONFIG = this.retrieveDeployConfig();
-    this.TARGET_CONFIG = this.retrieveTargetConfig();
+    // this.TARGET_CONFIG = this.retrieveTargetConfig();
 
     // If both the Deploy Config and Target Config were retrieved properly
-    if (this.DEPLOY_CONFIG && this.TARGET_CONFIG) {
+    if (this.DEPLOY_CONFIG) { //&& this.TARGET_CONFIG
       // Test if the current post request meets the deploy conditions specified in the config and if true run the boot process
       if (this.isTriggered()) this.deploy();
       else this.logger.warn("The Post data parameters did not meet the deploy hook requirements defined by the configuration.", this.TIME_OBJECT);
@@ -170,22 +170,22 @@ export class Server {
     return false;
   }
 
-  /** 
-   * `getTargetConfig()` branch ref from the server config with the current post data object repository name and returns the matched object.
-   * @return mixed  Object or false
-   */
-  private retrieveTargetConfig():any {
-    // Loop through that repos target branches and try to match to the target branch sent by the post data
-    for (var i = 0; i < this.DEPLOY_CONFIG.targets.length; i++) {
-      // If the repo has a matching branch, return the value of the target_key
-      if (this.DEPLOY_CONFIG.targets[i].ref === this.POST.ref) {
-        this.logger.debug("Matched a repository target branch successfully.", {target_branch: this.DEPLOY_CONFIG.targets[i], timestamp: moment().format(this.TIME_FORMAT)});
-        return this.DEPLOY_CONFIG.targets[i];
-      }
-    }
-    this.logger.debug("No matching repository target branch was found in the configuration.", this.TIME_OBJECT);
-    return false;
-  }
+  // /** 
+  //  * `getTargetConfig()` branch ref from the server config with the current post data object repository name and returns the matched object.
+  //  * @return mixed  Object or false
+  //  */
+  // private retrieveTargetConfig():any {
+  //   // Loop through that repos target branches and try to match to the target branch sent by the post data
+  //   for (var i = 0; i < this.DEPLOY_CONFIG.targets.length; i++) {
+  //     // If the repo has a matching branch, return the value of the target_key
+  //     if (this.DEPLOY_CONFIG.targets[i].ref === this.POST.ref) {
+  //       this.logger.debug("Matched a repository target branch successfully.", {target_branch: this.DEPLOY_CONFIG.targets[i], timestamp: moment().format(this.TIME_FORMAT)});
+  //       return this.DEPLOY_CONFIG.targets[i];
+  //     }
+  //   }
+  //   this.logger.debug("No matching repository target branch was found in the configuration.", this.TIME_OBJECT);
+  //   return false;
+  // }
 
   /** 
    * `isTriggered()` checks if the POST properties hook conditions meet those configured for triggering a deployment.
@@ -193,30 +193,43 @@ export class Server {
    */
   private isTriggered():boolean {
 
-    // Get the hook paths
-    var hook_paths = Object.keys(this.TARGET_CONFIG.hooks);
-    // Instantiate an array to store the truthiness of each hook
-    var truth = [];
+    // Loop through each Target Config for matched hooks
+    for (var i = 0; i < this.DEPLOY_CONFIG.targets.length; i++) {
 
-    for (var index in hook_paths) {
-      // The actual hook path
-      var hook_path = hook_paths[index];
-      // The hook's value
-      var hook_value = this.TARGET_CONFIG.hooks[hook_path];
+      var target_config = this.DEPLOY_CONFIG.targets[i];
 
-      this.logger.debug("Attempting to match the hook with a key of %s and a value of %s.", hook_path, hook_value, this.TIME_OBJECT);
-      
-      // If the hook path matches a path in the POST data, and if the value of both the POST Data path and hook path match
-      if ( this.getDeepMatch(this.POST, hook_path, hook_value) ) {
-        this.logger.debug("Matched the hook value in the target branch config with the post value.", {target_config: hook_value, post_value: this.POST[hook_path], timestamp: moment().format(this.TIME_FORMAT)});
-        truth.push(true);
+      // Get the hook paths
+      var hook_paths = Object.keys(target_config);
+      // Instantiate an array to store the truthiness of each hook
+      var truth = [];
+
+      for (var index in hook_paths) {
+        // The actual hook path
+        var hook_path = hook_paths[index];
+        // The hook's value
+        var hook_value = this.TARGET_CONFIG.hooks[hook_path];
+
+        this.logger.debug("Attempting to match the hook with a key of %s and a value of %s.", hook_path, hook_value, this.TIME_OBJECT);
+        
+        // If the hook path matches a path in the POST data, and if the value of both the POST Data path and hook path match
+        if ( this.getDeepMatch(this.POST, hook_path, hook_value) ) {
+          this.logger.debug("Matched the hook value in the target branch config with the post value.", {target_config: hook_value, post_value: this.POST[hook_path], timestamp: moment().format(this.TIME_FORMAT)});
+          truth.push(true);
+        }
+        
       }
-      
+      // Check if all of the configured hooks match the GitLab post data
+      var matched = ( hook_paths.length === truth.length );
+      if (matched) {
+        this.logger.debug("All hooks in the repository target branch config matched!", this.TIME_OBJECT);
+        // Set the server's TARGET_CONFIG property since the hooks match
+        this.TARGET_CONFIG = target_config;
+        return true;
+      }
+    
     }
-    // Check if all of the configured hooks match the GitLab post data
-    var matched = ( hook_paths.length === truth.length );
-    if (matched) this.logger.debug("All hooks in the repository target branch config matched!", this.TIME_OBJECT);
-    return matched;
+
+    return false;
   }
 
     /** 
@@ -273,7 +286,7 @@ export class Server {
    *  `gitPushToDeploy()` runs a `git push` command from the target repo to the set `deploy` remote.
    */
   private gitPushToDeploy(callback?:StatusCallback):void {
-    shell.exec('cd repos/'+this.DEPLOY_CONFIG.name+' && git push deploy master --force', function (status, output, err) {
+    shell.exec('cd repos/'+this.DEPLOY_CONFIG.name+' && git push deploy '+this.TARGET_CONFIG.branch+' --force', function (status, output, err) {
       if (status === 0) this.logger.debug('Deployed successfully.', this.TIME_OBJECT);
       else this.logger.error('Failed to push to the deploy server!', {error: err, timestamp: moment().format(this.TIME_FORMAT)});
       if (callback) callback(status);

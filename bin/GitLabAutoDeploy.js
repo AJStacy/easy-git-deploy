@@ -57,11 +57,10 @@ var Server = (function () {
     Server.prototype.postDataReceived = function (data) {
         this.logger.debug("Setting the server class properties (POST, ORIGIN, and DEPLOY_CONFIG')", this.TIME_OBJECT);
         this.POST = JSON.parse(Buffer.concat(data).toString());
-        this.logger.debug("The Post data received : %j", this.POST, this.TIME_OBJECT);
+        this.logger.debug("The Post data received:", { postData: this.POST, timestamp: moment().format(this.TIME_FORMAT) });
         this.ORIGIN = this.POST.repository.url;
         this.DEPLOY_CONFIG = this.retrieveDeployConfig();
-        this.TARGET_CONFIG = this.retrieveTargetConfig();
-        if (this.DEPLOY_CONFIG && this.TARGET_CONFIG) {
+        if (this.DEPLOY_CONFIG) {
             if (this.isTriggered())
                 this.deploy();
             else
@@ -78,32 +77,28 @@ var Server = (function () {
         this.logger.debug("No matching repository was found in the configuration.", this.TIME_OBJECT);
         return false;
     };
-    Server.prototype.retrieveTargetConfig = function () {
-        for (var i = 0; i < this.DEPLOY_CONFIG.targets.length; i++) {
-            if (this.DEPLOY_CONFIG.targets[i].ref === this.POST.ref) {
-                this.logger.debug("Matched a repository target branch successfully.", { target_branch: this.DEPLOY_CONFIG.targets[i], timestamp: moment().format(this.TIME_FORMAT) });
-                return this.DEPLOY_CONFIG.targets[i];
-            }
-        }
-        this.logger.debug("No matching repository target branch was found in the configuration.", this.TIME_OBJECT);
-        return false;
-    };
     Server.prototype.isTriggered = function () {
-        var hook_paths = Object.keys(this.TARGET_CONFIG.hooks);
-        var truth = [];
-        for (var index in hook_paths) {
-            var hook_path = hook_paths[index];
-            var hook_value = this.TARGET_CONFIG.hooks[hook_path];
-            this.logger.debug("Attempting to match the hook with a key of %s and a value of %s.", hook_path, hook_value, this.TIME_OBJECT);
-            if (this.getDeepMatch(this.POST, hook_path, hook_value)) {
-                this.logger.debug("Matched the hook value in the target branch config with the post value.", { target_config: hook_value, post_value: this.POST[hook_path], timestamp: moment().format(this.TIME_FORMAT) });
-                truth.push(true);
+        for (var i = 0; i < this.DEPLOY_CONFIG.targets.length; i++) {
+            var target_config = this.DEPLOY_CONFIG.targets[i];
+            var hook_paths = Object.keys(target_config);
+            var truth = [];
+            for (var index in hook_paths) {
+                var hook_path = hook_paths[index];
+                var hook_value = this.TARGET_CONFIG.hooks[hook_path];
+                this.logger.debug("Attempting to match the hook with a key of %s and a value of %s.", hook_path, hook_value, this.TIME_OBJECT);
+                if (this.getDeepMatch(this.POST, hook_path, hook_value)) {
+                    this.logger.debug("Matched the hook value in the target branch config with the post value.", { target_config: hook_value, post_value: this.POST[hook_path], timestamp: moment().format(this.TIME_FORMAT) });
+                    truth.push(true);
+                }
+            }
+            var matched = (hook_paths.length === truth.length);
+            if (matched) {
+                this.logger.debug("All hooks in the repository target branch config matched!", this.TIME_OBJECT);
+                this.TARGET_CONFIG = target_config;
+                return true;
             }
         }
-        var matched = (hook_paths.length === truth.length);
-        if (matched)
-            this.logger.debug("All hooks in the repository target branch config matched!", this.TIME_OBJECT);
-        return matched;
+        return false;
     };
     Server.prototype.getDeepMatch = function (object, path, value) {
         if (_.hasIn(object, path)) {
@@ -133,7 +128,7 @@ var Server = (function () {
             fail();
     };
     Server.prototype.gitPushToDeploy = function (callback) {
-        shell.exec('cd repos/' + this.DEPLOY_CONFIG.name + ' && git push deploy master --force', function (status, output, err) {
+        shell.exec('cd repos/' + this.DEPLOY_CONFIG.name + ' && git push deploy ' + this.TARGET_CONFIG.branch + ' --force', function (status, output, err) {
             if (status === 0)
                 this.logger.debug('Deployed successfully.', this.TIME_OBJECT);
             else
