@@ -141,16 +141,15 @@ export class Server {
     this.logger.debug("The Post data received : %j", this.POST, this.TIME_OBJECT);
     this.ORIGIN = this.POST.repository.url;
 
-    try {
-      this.DEPLOY_CONFIG = this.retrieveDeployConfig();
-      this.TARGET_CONFIG = this.retrieveTargetConfig();
-    } catch (err) {
-      this.logger.error("Failed to retrieve data from the configuration object.", {timestamp: moment().format(this.TIME_FORMAT), error: err});
-    }
+    this.DEPLOY_CONFIG = this.retrieveDeployConfig();
+    this.TARGET_CONFIG = this.retrieveTargetConfig();
 
-    // Test if the current post request meets the deploy conditions specified in the config and if true run the boot process
-    if (this.isTriggered()) this.deploy();
-    else this.logger.warn("The Post data parameters did not meet the deploy hook requirements defined by the configuration.", this.TIME_OBJECT);
+    // If both the Deploy Config and Target Config were retrieved properly
+    if (this.DEPLOY_CONFIG && this.TARGET_CONFIG) {
+      // Test if the current post request meets the deploy conditions specified in the config and if true run the boot process
+      if (this.isTriggered()) this.deploy();
+      else this.logger.warn("The Post data parameters did not meet the deploy hook requirements defined by the configuration.", this.TIME_OBJECT);
+    }
 
   }
 
@@ -193,6 +192,7 @@ export class Server {
    * @return boolean
    */
   private isTriggered():boolean {
+
     // Get the hook paths
     var hook_paths = Object.keys(this.TARGET_CONFIG.hooks);
     // Instantiate an array to store the truthiness of each hook

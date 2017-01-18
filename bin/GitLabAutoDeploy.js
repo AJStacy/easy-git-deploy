@@ -59,17 +59,14 @@ var Server = (function () {
         this.POST = JSON.parse(Buffer.concat(data).toString());
         this.logger.debug("The Post data received : %j", this.POST, this.TIME_OBJECT);
         this.ORIGIN = this.POST.repository.url;
-        try {
-            this.DEPLOY_CONFIG = this.retrieveDeployConfig();
-            this.TARGET_CONFIG = this.retrieveTargetConfig();
+        this.DEPLOY_CONFIG = this.retrieveDeployConfig();
+        this.TARGET_CONFIG = this.retrieveTargetConfig();
+        if (this.DEPLOY_CONFIG && this.TARGET_CONFIG) {
+            if (this.isTriggered())
+                this.deploy();
+            else
+                this.logger.warn("The Post data parameters did not meet the deploy hook requirements defined by the configuration.", this.TIME_OBJECT);
         }
-        catch (err) {
-            this.logger.error("Failed to retrieve data from the configuration object.", { timestamp: moment().format(this.TIME_FORMAT), error: err });
-        }
-        if (this.isTriggered())
-            this.deploy();
-        else
-            this.logger.warn("The Post data parameters did not meet the deploy hook requirements defined by the configuration.", this.TIME_OBJECT);
     };
     Server.prototype.retrieveDeployConfig = function () {
         for (var x = 0; x < this.SERVER_CONFIG.repositories.length; x++) {
