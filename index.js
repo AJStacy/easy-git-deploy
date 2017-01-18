@@ -17,7 +17,7 @@ var daily = new winston.transports.DailyRotateFile({
 
 var logger = new (winston.Logger)({
   transports: [
-    new (winston.transports.Console)(),
+    new (winston.transports.Console)({level: config.server.log_level}),
     daily
   ]
 });

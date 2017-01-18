@@ -34,24 +34,24 @@ var Server = (function () {
     };
     Server.prototype.handleRequest = function (req, res, logger, callback) {
         if (req.url === '/favicon.ico') {
-            this.logger.debug("Received a favicon request. Ignoring...", this.TIME_OBJECT);
+            logger.debug("Received a favicon request. Ignoring...", this.TIME_OBJECT);
             res.writeHead(200, { 'Content-Type': 'image/x-icon' });
             res.end();
             return;
         }
         var postData = [];
         if (req.method == 'POST') {
-            this.logger.debug("Received a Post request.", this.TIME_OBJECT);
+            logger.debug("Received a Post request.", this.TIME_OBJECT);
             req.on('data', function (chunk) {
                 postData.push(chunk);
             });
             req.on('end', function () {
-                this.logger.debug("The Post data received : %j", postData, this.TIME_OBJECT);
+                logger.debug("The Post data received : %j", postData, this.TIME_OBJECT);
                 res.writeHead(200, { 'Content-Type': 'text/plain' });
                 callback(postData);
             });
             req.on('error', function (err) {
-                this.logger.error("Failed to receive the Post data. ERR_MSG: ", err, { error: err, timestamp: moment().format(this.TIME_FORMAT) });
+                logger.error("Failed to receive the Post data. ERR_MSG: ", err, { error: err, timestamp: moment().format(this.TIME_FORMAT) });
             });
         }
     };
