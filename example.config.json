@@ -1,6 +1,7 @@
 {
   "server": {
     "port": 1988,
+    "log_level": "debug",
     "timestamp_format": "MM:DD:YYYY - HH:mm",
     "deploy_remote_name": "glad-deploy"
   },

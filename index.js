@@ -5,11 +5,14 @@ var argv = require("yargs").argv;
 var winston = require("winston");
 require('winston-daily-rotate-file');
 
+// Get the server configuration
+var config = require('./config.json');
+
 var daily = new winston.transports.DailyRotateFile({
   filename: './logs/log',
   datePattern: 'yyyy-MM-dd.',
   prepend: true,
-  level: process.env.ENV === 'development' ? 'debug' : 'info'
+  level: config.server.log_level
 });
 
 var logger = new (winston.Logger)({
@@ -28,7 +31,6 @@ if (argv.d) {
 
 
 var GitLabAutoDeploy = require("./bin/GitLabAutoDeploy");
-var config = require('./config.json');
 
 logger.debug("Instantiating the GitLab Auto Deploy server...");
 // Requires a JSON config object and a Winston logger instance as parameters
