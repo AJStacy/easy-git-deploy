@@ -120,7 +120,6 @@ export class Server {
       });
       // Trigger the main logic after POST data has been received.
       req.on('end', function() {
-        logger.debug("The Post data received : %j", postData, this.TIME_OBJECT);
         res.writeHead(200, {'Content-Type': 'text/plain'});
         callback(postData);
       });
@@ -139,6 +138,7 @@ export class Server {
     // Set the server class properties
     this.logger.debug("Setting the server class properties (POST, ORIGIN, and DEPLOY_CONFIG')", this.TIME_OBJECT);
     this.POST = JSON.parse(Buffer.concat(data).toString());
+    this.logger.debug("The Post data received : %j", this.POST, this.TIME_OBJECT);
     this.ORIGIN = this.POST.repository.url;
 
     try {
