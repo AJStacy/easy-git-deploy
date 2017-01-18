@@ -80,11 +80,11 @@ var Server = (function () {
     Server.prototype.isTriggered = function () {
         for (var i = 0; i < this.DEPLOY_CONFIG.targets.length; i++) {
             var target_config = this.DEPLOY_CONFIG.targets[i];
-            var hook_paths = Object.keys(target_config);
+            var hook_paths = Object.keys(target_config.hooks);
             var truth = [];
             for (var index in hook_paths) {
                 var hook_path = hook_paths[index];
-                var hook_value = this.TARGET_CONFIG.hooks[hook_path];
+                var hook_value = target_config.hooks[hook_path];
                 this.logger.debug("Attempting to match the hook with a key of %s and a value of %s.", hook_path, hook_value, this.TIME_OBJECT);
                 if (this.getDeepMatch(this.POST, hook_path, hook_value)) {
                     this.logger.debug("Matched the hook value in the target branch config with the post value.", { target_config: hook_value, post_value: this.POST[hook_path], timestamp: moment().format(this.TIME_FORMAT) });
@@ -102,20 +102,22 @@ var Server = (function () {
     };
     Server.prototype.getDeepMatch = function (object, path, value) {
         if (_.hasIn(object, path)) {
+            this.logger.debug("The path exists in the object.", { path: path, timestamp: moment().format(this.TIME_FORMAT) });
+            this.logger.debug("Do the values match?", { hook_value: value, post_value: _.get(object, path), timestamp: moment().format(this.TIME_FORMAT) });
             return (_.get(object, path) === value);
         }
         return false;
     };
     Server.prototype.deploy = function () {
         var _this = this;
-        this.logger.info("Attempting to deploy branch '%s' for commit with message of '%s' by '%s'...", this.POST.ref, this.POST.commit.message, this.POST.commit.author_name, this.TIME_OBJECT);
+        this.logger.info("Attempting to deploy branch '%s'...", this.TARGET_CONFIG.branch, this.TIME_OBJECT);
         this.gitClone(function (status) {
             _this.statusCheck(status, function () {
                 _this.gitSetRemote(function () {
                     _this.gitPushToDeploy();
                 });
             }, function () {
-                _this.gitPullMaster(function (status) {
+                _this.gitPullBranch(function (status) {
                     _this.gitPushToDeploy();
                 });
             });
@@ -128,42 +130,45 @@ var Server = (function () {
             fail();
     };
     Server.prototype.gitPushToDeploy = function (callback) {
+        var self = this;
         shell.exec('cd repos/' + this.DEPLOY_CONFIG.name + ' && git push deploy ' + this.TARGET_CONFIG.branch + ' --force', function (status, output, err) {
             if (status === 0)
-                this.logger.debug('Deployed successfully.', this.TIME_OBJECT);
+                self.logger.debug('Deployed successfully.', self.TIME_OBJECT);
             else
-                this.logger.error('Failed to push to the deploy server!', { error: err, timestamp: moment().format(this.TIME_FORMAT) });
+                self.logger.error('Failed to push to the deploy server!', { error: err, timestamp: moment().format(self.TIME_FORMAT) });
             if (callback)
                 callback(status);
         });
     };
-    Server.prototype.gitPullMaster = function (callback) {
-        var return_status;
-        shell.exec('cd repos/' + this.DEPLOY_CONFIG.name + ' && git pull origin master', function (status, output, err) {
+    Server.prototype.gitPullBranch = function (callback) {
+        var self = this;
+        shell.exec('cd repos/' + this.DEPLOY_CONFIG.name + ' && git pull origin ' + this.TARGET_CONFIG.branch, function (status, output, err) {
             if (status === 0)
-                this.logger.debug('Remote branch pulled successfully.', this.TIME_OBJECT);
+                self.logger.debug('Remote branch pulled successfully.', self.TIME_OBJECT);
             else
-                this.logger.debug('Remote pull is already up to date.', this.TIME_OBJECT);
+                self.logger.debug('Remote pull is already up to date.', self.TIME_OBJECT);
             if (callback)
                 callback(status);
         });
     };
     Server.prototype.gitSetRemote = function (callback) {
+        var self = this;
         shell.exec('cd repos/' + this.DEPLOY_CONFIG.name + ' && git remote add ' + this.SERVER_CONFIG.deploy_remote_name + ' ' + this.TARGET_CONFIG.deploy_url, function (status, output, err) {
             if (status === 0)
-                this.logger.debug('Remote named "%s" set.', this.SERVER_CONFIG.deploy_remote_name, this.TIME_OBJECT);
+                self.logger.debug('Remote named "%s" set.', self.SERVER_CONFIG.deploy_remote_name, self.TIME_OBJECT);
             else
-                this.logger.debug('Remote already exists.', this.TIME_OBJECT);
+                self.logger.debug('Remote already exists.', self.TIME_OBJECT);
             if (callback)
                 callback(status);
         });
     };
     Server.prototype.gitClone = function (callback) {
+        var self = this;
         shell.exec('cd repos && git clone ' + this.ORIGIN + ' ' + this.DEPLOY_CONFIG.name, function (status, output, err) {
             if (status === 0)
-                this.logger.debug('Repository cloned successfully.', this.TIME_OBJECT);
+                self.logger.debug('Repository cloned successfully.', self.TIME_OBJECT);
             else
-                this.logger.debug('Repository already cloned.', this.TIME_OBJECT);
+                self.logger.debug('Repository already cloned.', self.TIME_OBJECT);
             if (callback)
                 callback(status);
         });

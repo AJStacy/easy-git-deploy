@@ -199,7 +199,7 @@ export class Server {
       var target_config = this.DEPLOY_CONFIG.targets[i];
 
       // Get the hook paths
-      var hook_paths = Object.keys(target_config);
+      var hook_paths = Object.keys(target_config.hooks);
       // Instantiate an array to store the truthiness of each hook
       var truth = [];
 
@@ -207,7 +207,7 @@ export class Server {
         // The actual hook path
         var hook_path = hook_paths[index];
         // The hook's value
-        var hook_value = this.TARGET_CONFIG.hooks[hook_path];
+        var hook_value = target_config.hooks[hook_path];
 
         this.logger.debug("Attempting to match the hook with a key of %s and a value of %s.", hook_path, hook_value, this.TIME_OBJECT);
         
@@ -238,6 +238,8 @@ export class Server {
    */
   private getDeepMatch(object:any, path:string, value:any):boolean {
     if (_.hasIn(object, path)) {
+      this.logger.debug("The path exists in the object.", {path: path, timestamp: moment().format(this.TIME_FORMAT)});
+      this.logger.debug("Do the values match?", {hook_value: value, post_value: _.get(object, path), timestamp: moment().format(this.TIME_FORMAT)});
       return (_.get(object, path) === value);
     }
     return false;
@@ -248,7 +250,7 @@ export class Server {
    */
   private deploy():void {
 
-    this.logger.info("Attempting to deploy branch '%s' for commit with message of '%s' by '%s'...", this.POST.ref, this.POST.commit.message, this.POST.commit.author_name, this.TIME_OBJECT);
+    this.logger.info("Attempting to deploy branch '%s'...", this.TARGET_CONFIG.branch, this.TIME_OBJECT);
 
     // Try to clone the git repo
     this.gitClone( (status) => {
@@ -265,7 +267,7 @@ export class Server {
         },
         () => {
           // Pull the current branch
-          this.gitPullMaster( (status) => {
+          this.gitPullBranch( (status) => {
             // Push to the deploy remote
             this.gitPushToDeploy();
           });
@@ -286,21 +288,22 @@ export class Server {
    *  `gitPushToDeploy()` runs a `git push` command from the target repo to the set `deploy` remote.
    */
   private gitPushToDeploy(callback?:StatusCallback):void {
+    var self = this;
     shell.exec('cd repos/'+this.DEPLOY_CONFIG.name+' && git push deploy '+this.TARGET_CONFIG.branch+' --force', function (status, output, err) {
-      if (status === 0) this.logger.debug('Deployed successfully.', this.TIME_OBJECT);
-      else this.logger.error('Failed to push to the deploy server!', {error: err, timestamp: moment().format(this.TIME_FORMAT)});
+      if (status === 0) self.logger.debug('Deployed successfully.', self.TIME_OBJECT);
+      else self.logger.error('Failed to push to the deploy server!', {error: err, timestamp: moment().format(self.TIME_FORMAT)});
       if (callback) callback(status);
     });
   }
 
   /** 
-   *  `gitPullMaster()` runs a `git pull` command from the target repo to the `./repos` directory.
+   *  `gitPullBranch()` runs a `git pull` command from the target repo to the `./repos` directory.
    */
-  private gitPullMaster(callback?:StatusCallback):void {
-    var return_status;
-    shell.exec('cd repos/'+this.DEPLOY_CONFIG.name+' && git pull origin master', function (status, output, err) {
-      if (status === 0) this.logger.debug('Remote branch pulled successfully.', this.TIME_OBJECT);
-      else this.logger.debug('Remote pull is already up to date.', this.TIME_OBJECT);
+  private gitPullBranch(callback?:StatusCallback):void {
+    var self = this;
+    shell.exec('cd repos/'+this.DEPLOY_CONFIG.name+' && git pull origin '+this.TARGET_CONFIG.branch, function (status, output, err) {
+      if (status === 0) self.logger.debug('Remote branch pulled successfully.', self.TIME_OBJECT);
+      else self.logger.debug('Remote pull is already up to date.', self.TIME_OBJECT);
       if (callback) callback(status);
     });
   }
@@ -309,9 +312,10 @@ export class Server {
    *  `gitSetRemote()` set the git remote URL for deploying the project.
    */
   private gitSetRemote(callback?:StatusCallback):void {
+    var self = this;
     shell.exec('cd repos/'+this.DEPLOY_CONFIG.name+' && git remote add '+this.SERVER_CONFIG.deploy_remote_name+' '+this.TARGET_CONFIG.deploy_url, function (status, output, err) {
-      if (status === 0) this.logger.debug('Remote named "%s" set.', this.SERVER_CONFIG.deploy_remote_name, this.TIME_OBJECT);
-      else this.logger.debug('Remote already exists.', this.TIME_OBJECT);
+      if (status === 0) self.logger.debug('Remote named "%s" set.', self.SERVER_CONFIG.deploy_remote_name, self.TIME_OBJECT);
+      else self.logger.debug('Remote already exists.', self.TIME_OBJECT);
       if (callback) callback(status);
     });
   }
@@ -320,9 +324,10 @@ export class Server {
    *  `gitClone()` clones the target repo received in the post data to the `./repos` directory.
    */
   private gitClone(callback?:StatusCallback):void {
+    var self = this;
     shell.exec('cd repos && git clone '+this.ORIGIN+' '+this.DEPLOY_CONFIG.name, function(status, output, err) {
-      if (status === 0) this.logger.debug('Repository cloned successfully.', this.TIME_OBJECT);
-      else this.logger.debug('Repository already cloned.', this.TIME_OBJECT);
+      if (status === 0) self.logger.debug('Repository cloned successfully.', self.TIME_OBJECT);
+      else self.logger.debug('Repository already cloned.', self.TIME_OBJECT);
       if (callback) callback(status);
     });
   }
