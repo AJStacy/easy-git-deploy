@@ -153,7 +153,7 @@ var Server = (function () {
     };
     Server.prototype.gitSetRemote = function (callback) {
         var self = this;
-        shell.exec('cd repos/' + this.DEPLOY_CONFIG.name + ' && git remote add ' + this.SERVER_CONFIG.deploy_remote_name + ' ' + this.TARGET_CONFIG.deploy_url, function (status, output, err) {
+        shell.exec('cd repos/' + this.DEPLOY_CONFIG.server.deploy_remote_name + ' && git remote add ' + this.SERVER_CONFIG.deploy_remote_name + ' ' + this.TARGET_CONFIG.deploy_url, function (status, output, err) {
             if (status === 0)
                 self.logger.debug('Remote named "%s" set.', self.SERVER_CONFIG.deploy_remote_name, self.TIME_OBJECT);
             else
@@ -168,7 +168,7 @@ var Server = (function () {
             if (status === 0)
                 self.logger.debug('Repository cloned successfully.', self.TIME_OBJECT);
             else
-                self.logger.debug('Repository already cloned.', self.TIME_OBJECT);
+                self.logger.debug('Error cloning the repository.', { error: err, timestamp: moment().format(this.TIME_FORMAT) });
             if (callback)
                 callback(status);
         });
