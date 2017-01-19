@@ -111,25 +111,17 @@ var Server = (function () {
     Server.prototype.deploy = function () {
         var _this = this;
         this.logger.info("Attempting to deploy branch '%s'...", this.TARGET_CONFIG.branch, this.TIME_OBJECT);
-        this.gitClone(function (status) {
-            _this.statusCheck(status, function () {
-                _this.gitSetRemote(function () {
-                    _this.gitPullBranch(function () {
-                        _this.gitPushToDeploy();
+        this.gitClone(function () {
+            _this.gitSetRemote(function () {
+                _this.gitFetchBranch(function () {
+                    _this.gitCheckoutBranch(function () {
+                        _this.gitPullBranch(function () {
+                            _this.gitPushToDeploy();
+                        });
                     });
-                });
-            }, function () {
-                _this.gitPullBranch(function (status) {
-                    _this.gitPushToDeploy();
                 });
             });
         });
-    };
-    Server.prototype.statusCheck = function (status, success, fail) {
-        if (status === 0)
-            success();
-        else
-            fail();
     };
     Server.prototype.gitPushToDeploy = function (callback) {
         var self = this;
@@ -137,7 +129,29 @@ var Server = (function () {
             if (status === 0)
                 self.logger.debug('Deployed successfully.', self.TIME_OBJECT);
             else
-                self.logger.error('Failed to push to the deploy server!', { error: err, timestamp: moment().format(self.TIME_FORMAT) });
+                self.logger.warn('Failed to push to the deploy server.', { error: err, timestamp: moment().format(self.TIME_FORMAT) });
+            if (callback)
+                callback(status);
+        });
+    };
+    Server.prototype.gitCheckoutBranch = function (callback) {
+        var self = this;
+        shell.exec('cd repos/' + this.DEPLOY_CONFIG.name + ' && git checkout ' + this.TARGET_CONFIG.branch, function (status, output, err) {
+            if (status === 0)
+                self.logger.debug('Checkout of branch was successful.', self.TIME_OBJECT);
+            else
+                self.logger.warn('Checkout of branch failed.', { error: err, timestamp: moment().format(self.TIME_FORMAT) });
+            if (callback)
+                callback(status);
+        });
+    };
+    Server.prototype.gitFetchBranch = function (callback) {
+        var self = this;
+        shell.exec('cd repos/' + this.DEPLOY_CONFIG.name + ' && git fetch origin ' + this.TARGET_CONFIG.branch + ':' + this.TARGET_CONFIG.branch, function (status, output, err) {
+            if (status === 0)
+                self.logger.debug('Remote branch fetched successfully.', self.TIME_OBJECT);
+            else
+                self.logger.warn('Remote fetch failed.', { error: err, timestamp: moment().format(self.TIME_FORMAT) });
             if (callback)
                 callback(status);
         });
@@ -148,7 +162,7 @@ var Server = (function () {
             if (status === 0)
                 self.logger.debug('Remote branch pulled successfully.', self.TIME_OBJECT);
             else
-                self.logger.debug('Remote pull is already up to date.', self.TIME_OBJECT);
+                self.logger.warn('Remote pull failed.', { error: err, timestamp: moment().format(self.TIME_FORMAT) });
             if (callback)
                 callback(status);
         });
@@ -159,7 +173,7 @@ var Server = (function () {
             if (status === 0)
                 self.logger.debug('Remote named "%s" set.', self.SERVER_CONFIG.deploy_remote_name, self.TIME_OBJECT);
             else
-                self.logger.debug('Remote already exists.', self.TIME_OBJECT);
+                self.logger.debug('Failed to set the remote', { error: err, timestamp: moment().format(self.TIME_FORMAT) });
             if (callback)
                 callback(status);
         });
