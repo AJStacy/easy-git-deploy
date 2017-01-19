@@ -313,7 +313,7 @@ export class Server {
    */
   private gitSetRemote(callback?:StatusCallback):void {
     var self = this;
-    shell.exec('cd repos/'+this.DEPLOY_CONFIG.server.deploy_remote_name+' && git remote add '+this.SERVER_CONFIG.deploy_remote_name+' '+this.TARGET_CONFIG.deploy_url, function (status, output, err) {
+    shell.exec('cd repos/'+this.SERVER_CONFIG.server.deploy_remote_name+' && git remote add '+this.SERVER_CONFIG.deploy_remote_name+' '+this.TARGET_CONFIG.deploy_url, function (status, output, err) {
       if (status === 0) self.logger.debug('Remote named "%s" set.', self.SERVER_CONFIG.deploy_remote_name, self.TIME_OBJECT);
       else self.logger.debug('Remote already exists.', self.TIME_OBJECT);
       if (callback) callback(status);
