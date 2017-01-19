@@ -114,7 +114,9 @@ var Server = (function () {
         this.gitClone(function (status) {
             _this.statusCheck(status, function () {
                 _this.gitSetRemote(function () {
-                    _this.gitPushToDeploy();
+                    _this.gitPullBranch(function () {
+                        _this.gitPushToDeploy();
+                    });
                 });
             }, function () {
                 _this.gitPullBranch(function (status) {

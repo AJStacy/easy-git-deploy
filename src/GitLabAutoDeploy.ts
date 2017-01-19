@@ -261,8 +261,11 @@ export class Server {
           // Make sure the remote for deploying is set.
           this.gitSetRemote( () => {
 
-            // Push to the deploy remote.
-            this.gitPushToDeploy();
+            this.gitPullBranch( () => {
+              // Push to the deploy remote.
+              this.gitPushToDeploy();
+            });
+
           });
         },
         () => {
