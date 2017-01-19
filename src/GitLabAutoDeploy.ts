@@ -120,7 +120,7 @@ export class Server {
       });
       // Trigger the main logic after POST data has been received.
       req.on('end', function() {
-        res.writeHead(200, {'Content-Type': 'text/plain'});
+        res.writeHead(200);
         res.end();
         callback(postData);
       });
