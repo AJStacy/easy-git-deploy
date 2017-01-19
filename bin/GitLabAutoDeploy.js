@@ -131,7 +131,7 @@ var Server = (function () {
     };
     Server.prototype.gitPushToDeploy = function (callback) {
         var self = this;
-        shell.exec('cd repos/' + this.DEPLOY_CONFIG.name + ' && git push deploy ' + this.TARGET_CONFIG.branch + ' --force', function (status, output, err) {
+        shell.exec('cd repos/' + this.DEPLOY_CONFIG.name + ' && git push ' + this.SERVER_CONFIG.server.deploy_remote_name + ' ' + this.TARGET_CONFIG.branch + ' --force', function (status, output, err) {
             if (status === 0)
                 self.logger.debug('Deployed successfully.', self.TIME_OBJECT);
             else
