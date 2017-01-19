@@ -170,23 +170,6 @@ export class Server {
     return false;
   }
 
-  // /** 
-  //  * `getTargetConfig()` branch ref from the server config with the current post data object repository name and returns the matched object.
-  //  * @return mixed  Object or false
-  //  */
-  // private retrieveTargetConfig():any {
-  //   // Loop through that repos target branches and try to match to the target branch sent by the post data
-  //   for (var i = 0; i < this.DEPLOY_CONFIG.targets.length; i++) {
-  //     // If the repo has a matching branch, return the value of the target_key
-  //     if (this.DEPLOY_CONFIG.targets[i].ref === this.POST.ref) {
-  //       this.logger.debug("Matched a repository target branch successfully.", {target_branch: this.DEPLOY_CONFIG.targets[i], timestamp: moment().format(this.TIME_FORMAT)});
-  //       return this.DEPLOY_CONFIG.targets[i];
-  //     }
-  //   }
-  //   this.logger.debug("No matching repository target branch was found in the configuration.", this.TIME_OBJECT);
-  //   return false;
-  // }
-
   /** 
    * `isTriggered()` checks if the POST properties hook conditions meet those configured for triggering a deployment.
    * @return boolean
@@ -253,38 +236,22 @@ export class Server {
     this.logger.info("Attempting to deploy branch '%s'...", this.TARGET_CONFIG.branch, this.TIME_OBJECT);
 
     // Try to clone the git repo
-    this.gitClone( (status) => {
-
-      // Check its status for a success or failure and run callbacks
-      this.statusCheck(status,
-        () => {
-          // Make sure the remote for deploying is set.
-          this.gitSetRemote( () => {
-
+    this.gitClone( () => {
+      // Make sure the remote for deploying is set
+      this.gitSetRemote( () => {
+        // Fetch the targeted branch
+        this.gitFetchBranch( () => {
+          // Checkout the targeted branch
+          this.gitCheckoutBranch( () => {
+            // Pull the targeted branch from GitLab for updates
             this.gitPullBranch( () => {
-              // Push to the deploy remote.
+              // Push the targeted branch to the deploy remote
               this.gitPushToDeploy();
             });
-
           });
-        },
-        () => {
-          // Pull the current branch
-          this.gitPullBranch( (status) => {
-            // Push to the deploy remote
-            this.gitPushToDeploy();
-          });
-        }
-      );
+        });
+      });
     });
-  }
-
-  /** 
-   *  `statusCheck()` checks if the status from a shell exec is success or fail and triggers the appropriate callback.
-   */
-  private statusCheck(status:number, success?:Callback, fail?:Callback):void {
-    if (status === 0) success();
-    else fail();
   }
 
   /** 
@@ -294,19 +261,43 @@ export class Server {
     var self = this;
     shell.exec('cd repos/'+this.DEPLOY_CONFIG.name+' && git push '+this.SERVER_CONFIG.server.deploy_remote_name+' '+this.TARGET_CONFIG.branch+' --force', function (status, output, err) {
       if (status === 0) self.logger.debug('Deployed successfully.', self.TIME_OBJECT);
-      else self.logger.error('Failed to push to the deploy server!', {error: err, timestamp: moment().format(self.TIME_FORMAT)});
+      else self.logger.warn('Failed to push to the deploy server.', {error: err, timestamp: moment().format(self.TIME_FORMAT)});
       if (callback) callback(status);
     });
   }
 
   /** 
-   *  `gitPullBranch()` runs a `git pull` command from the target repo to the `./repos` directory.
+   *  `gitCheckoutBranch()` runs a `git checkout` command to checkout the currently targeted branch on the temp repo.
+   */
+  private gitCheckoutBranch(callback?:StatusCallback):void {
+    var self = this;
+    shell.exec('cd repos/'+this.DEPLOY_CONFIG.name+' && git checkout '+this.TARGET_CONFIG.branch, function (status, output, err) {
+      if (status === 0) self.logger.debug('Checkout of branch was successful.', self.TIME_OBJECT);
+      else self.logger.warn('Checkout of branch failed.', {error: err, timestamp: moment().format(self.TIME_FORMAT)});
+      if (callback) callback(status);
+    });
+  }
+
+  /** 
+   *  `gitFetchBranch()` runs a `git fetch` command to retrieve the currently targeted branch from GitLab.
+   */
+  private gitFetchBranch(callback?:StatusCallback):void {
+    var self = this;
+    shell.exec('cd repos/'+this.DEPLOY_CONFIG.name+' && git fetch origin '+this.TARGET_CONFIG.branch+':'+this.TARGET_CONFIG.branch, function (status, output, err) {
+      if (status === 0) self.logger.debug('Remote branch fetched successfully.', self.TIME_OBJECT);
+      else self.logger.warn('Remote fetch failed.', {error: err, timestamp: moment().format(self.TIME_FORMAT)});
+      if (callback) callback(status);
+    });
+  }
+
+  /** 
+   *  `gitPullBranch()` runs a `git pull` command to make sure the currently targeted branch is up to date.
    */
   private gitPullBranch(callback?:StatusCallback):void {
     var self = this;
     shell.exec('cd repos/'+this.DEPLOY_CONFIG.name+' && git pull origin '+this.TARGET_CONFIG.branch, function (status, output, err) {
       if (status === 0) self.logger.debug('Remote branch pulled successfully.', self.TIME_OBJECT);
-      else self.logger.debug('Remote pull is already up to date.', self.TIME_OBJECT);
+      else self.logger.warn('Remote pull failed.', {error: err, timestamp: moment().format(self.TIME_FORMAT)});
       if (callback) callback(status);
     });
   }
@@ -318,7 +309,7 @@ export class Server {
     var self = this;
     shell.exec('cd repos/'+this.DEPLOY_CONFIG.name+' && git remote add '+this.SERVER_CONFIG.server.deploy_remote_name+' '+this.TARGET_CONFIG.deploy_url, function (status, output, err) {
       if (status === 0) self.logger.debug('Remote named "%s" set.', self.SERVER_CONFIG.deploy_remote_name, self.TIME_OBJECT);
-      else self.logger.debug('Remote already exists.', self.TIME_OBJECT);
+      else self.logger.debug('Failed to set the remote', {error: err, timestamp: moment().format(self.TIME_FORMAT)});
       if (callback) callback(status);
     });
   }
