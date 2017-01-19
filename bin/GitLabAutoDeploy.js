@@ -47,6 +47,7 @@ var Server = (function () {
             });
             req.on('end', function () {
                 res.writeHead(200, { 'Content-Type': 'text/plain' });
+                res.end();
                 callback(postData);
             });
             req.on('error', function (err) {
