@@ -168,7 +168,7 @@ var Server = (function () {
             if (status === 0)
                 self.logger.debug('Repository cloned successfully.', self.TIME_OBJECT);
             else
-                self.logger.debug('Error cloning the repository.', { error: err, timestamp: moment().format(this.TIME_FORMAT) });
+                self.logger.debug('Error cloning the repository.', { error: err, timestamp: moment().format(self.TIME_FORMAT) });
             if (callback)
                 callback(status);
         });
