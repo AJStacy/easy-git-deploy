@@ -289,7 +289,7 @@ export class Server {
    */
   private gitPushToDeploy(callback?:StatusCallback):void {
     var self = this;
-    shell.exec('cd repos/'+this.DEPLOY_CONFIG.name+' && git push deploy '+this.TARGET_CONFIG.branch+' --force', function (status, output, err) {
+    shell.exec('cd repos/'+this.DEPLOY_CONFIG.name+' && git push '+this.SERVER_CONFIG.server.deploy_remote_name+' '+this.TARGET_CONFIG.branch+' --force', function (status, output, err) {
       if (status === 0) self.logger.debug('Deployed successfully.', self.TIME_OBJECT);
       else self.logger.error('Failed to push to the deploy server!', {error: err, timestamp: moment().format(self.TIME_FORMAT)});
       if (callback) callback(status);
